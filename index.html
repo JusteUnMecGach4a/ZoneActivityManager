@@ -1039,13 +1039,19 @@
                     <div class="form-group">
                         <label>Couleur d'Affichage</label>
                         <div class="color-picker-group" id="color-picker-group">
-                            <div class="color-option selected" style="background-color: #6366f1;" data-color="#6366f1"></div>
-                            <div class="color-option" style="background-color: #10b981;" data-color="#10b981"></div>
-                            <div class="color-option" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
-                            <div class="color-option" style="background-color: #f43f5e;" data-color="#f43f5e"></div>
-                            <div class="color-option" style="background-color: #06b6d4;" data-color="#06b6d4"></div>
-                            <div class="color-option" style="background-color: #8b5cf6;" data-color="#8b5cf6"></div>
-                            <div class="color-option" style="background-color: #64748b;" data-color="#64748b"></div>
+                            <div class="color-option selected" style="background-color: #6366f1;" data-color="#6366f1" title="Indigo"></div>
+                            <div class="color-option" style="background-color: #3b82f6;" data-color="#3b82f6" title="Bleu"></div>
+                            <div class="color-option" style="background-color: #0ea5e9;" data-color="#0ea5e9" title="Ciel"></div>
+                            <div class="color-option" style="background-color: #0d9488;" data-color="#0d9488" title="Sarcelle"></div>
+                            <div class="color-option" style="background-color: #10b981;" data-color="#10b981" title="Émeraude"></div>
+                            <div class="color-option" style="background-color: #84cc16;" data-color="#84cc16" title="Lime"></div>
+                            <div class="color-option" style="background-color: #f59e0b;" data-color="#f59e0b" title="Ambre"></div>
+                            <div class="color-option" style="background-color: #f97316;" data-color="#f97316" title="Orange"></div>
+                            <div class="color-option" style="background-color: #ef4444;" data-color="#ef4444" title="Rouge"></div>
+                            <div class="color-option" style="background-color: #f43f5e;" data-color="#f43f5e" title="Rose vif"></div>
+                            <div class="color-option" style="background-color: #ec4899;" data-color="#ec4899" title="Rose"></div>
+                            <div class="color-option" style="background-color: #8b5cf6;" data-color="#8b5cf6" title="Violet"></div>
+                            <div class="color-option" style="background-color: #64748b;" data-color="#64748b" title="Ardoise"></div>
                         </div>
                     </div>
 
@@ -2046,14 +2052,20 @@
         // Map a hex color color to rotation degree filter value (so marker pins can be colored on the fly)
         function getHueRotateDegree(hex) {
             switch(hex) {
-                case '#10b981': return 140; // Emerald -> Green
-                case '#f59e0b': return 40;  // Amber -> Orange/Yellow
-                case '#f43f5e': return 0;   // Rose -> Red (Default)
-                case '#06b6d4': return 190; // Cyan -> Light Blue
-                case '#8b5cf6': return 270; // Violet -> Purple
-                case '#6366f1': return 230; // Indigo -> Blue
-                case '#64748b': return 210; // Slate -> BlueGrey
-                default: return 230;
+                case '#ef4444': return 0;    // Red
+                case '#f43f5e': return 350;  // Rose vif
+                case '#ec4899': return 320;  // Rose
+                case '#8b5cf6': return 270;  // Violet
+                case '#6366f1': return 240;  // Indigo
+                case '#3b82f6': return 220;  // Blue
+                case '#0ea5e9': return 190;  // Sky
+                case '#0d9488': return 170;  // Teal
+                case '#10b981': return 140;  // Emerald
+                case '#84cc16': return 90;   // Lime
+                case '#f59e0b': return 45;   // Amber
+                case '#f97316': return 25;   // Orange
+                case '#64748b': return 210;  // Slate
+                default: return 240;
             }
         }
 
@@ -2202,9 +2214,9 @@
             
             const mapElement = document.getElementById('map');
             
-            // Hide Leaflet controls for clean render
-            const controls = document.querySelectorAll('.leaflet-control-container');
-            controls.forEach(c => c.style.display = 'none');
+            // Hide only specific Leaflet controls (zoom, geoman tools, layer switch)
+            const controlsToHide = document.querySelectorAll('.leaflet-control-zoom, .leaflet-pm-toolbar, .leaflet-control-layers');
+            controlsToHide.forEach(c => c.style.display = 'none');
 
             // Build temporary legend matching the active theme
             const activeTheme = document.documentElement.getAttribute('data-theme');
@@ -2249,21 +2261,27 @@
                 </div>
             `;
 
-            const legendCard = document.createElement('div');
-            legendCard.id = 'temp-pdf-legend';
-            legendCard.style.position = 'absolute';
-            legendCard.style.top = '24px';
-            legendCard.style.left = '24px';
-            legendCard.style.zIndex = '9999';
-            legendCard.style.backgroundColor = isDark ? '#0f1524' : '#ffffff';
-            legendCard.style.border = `1px solid ${isDark ? '#1e293b' : '#cbd5e1'}`;
-            legendCard.style.borderRadius = '8px';
-            legendCard.style.padding = '12px';
-            legendCard.style.width = '220px';
-            legendCard.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)';
-            legendCard.innerHTML = legendHTML;
+            // Create a native Leaflet Control for the legend so it is positioned perfectly inside the map viewport
+            const legendControl = L.control({ position: 'topleft' });
+            legendControl.onAdd = function() {
+                const div = L.DomUtil.create('div', 'info legend');
+                div.id = 'temp-pdf-legend';
+                
+                // Styling
+                div.style.backgroundColor = isDark ? '#0f1524' : '#ffffff';
+                div.style.border = `1px solid ${isDark ? '#1e293b' : '#cbd5e1'}`;
+                div.style.borderRadius = '8px';
+                div.style.padding = '12px';
+                div.style.width = '220px';
+                div.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)';
+                div.style.fontFamily = "'Inter', sans-serif";
+                div.style.pointerEvents = 'none';
+                
+                div.innerHTML = legendHTML;
+                return div;
+            };
 
-            mapElement.appendChild(legendCard);
+            legendControl.addTo(map);
 
             setTimeout(() => {
                 html2canvas(mapElement, {
@@ -2272,9 +2290,9 @@
                     logging: false,
                     scale: 2 // Boost resolution quality
                 }).then(canvas => {
-                    // Restore controls & remove legend
-                    controls.forEach(c => c.style.display = '');
-                    legendCard.remove();
+                    // Restore controls & remove legend control
+                    controlsToHide.forEach(c => c.style.display = '');
+                    legendControl.remove();
 
                     try {
                         const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -2296,8 +2314,8 @@
                     }
                 }).catch(err => {
                     console.error("html2canvas error:", err);
-                    controls.forEach(c => c.style.display = '');
-                    legendCard.remove();
+                    controlsToHide.forEach(c => c.style.display = '');
+                    legendControl.remove();
                     showToast("Erreur lors du rendu du PDF", "danger");
                 });
             }, 150);
