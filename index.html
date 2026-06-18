@@ -1142,7 +1142,8 @@
         function initMap() {
             // Create Map
             map = L.map('map', {
-                zoomControl: false // Positioned customly
+                zoomControl: false, // Positioned customly
+                preferCanvas: true // Force canvas rendering for vectors to ensure they are captured in screenshots
             }).setView([CSC_LAT, CSC_LNG], 17);
 
             // Zoom control on top right
