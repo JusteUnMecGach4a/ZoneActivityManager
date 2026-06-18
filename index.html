@@ -1143,7 +1143,8 @@
             // Create Map
             map = L.map('map', {
                 zoomControl: false, // Positioned customly
-                preferCanvas: true // Force canvas rendering for vectors to ensure they are captured in screenshots
+                preferCanvas: true, // Force canvas rendering for vectors to ensure they are captured in screenshots
+                renderer: L.canvas({ preserveDrawingBuffer: true }) // Preserve drawing buffer so html2canvas can read it
             }).setView([CSC_LAT, CSC_LNG], 17);
 
             // Zoom control on top right
