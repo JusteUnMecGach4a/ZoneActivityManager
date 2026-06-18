@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActivityMapper - Centre Socioculturel de la Libération</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Leaflet Geoman CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    
+    <!-- Premium Stylesheet (Embedded) -->
+    <style>
+        /* -------------------------------------------------------------
+           ActivityMapper - Design System & Styles
+           ------------------------------------------------------------- */
+
+        /* Import premium fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        /* Variables and Themes */
+        :root {
+            /* Transitions */
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Layout heights & widths */
+            --sidebar-width: 420px;
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 18px;
+            --border-radius-xl: 24px;
+            
+            /* Light Theme (Default) */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            
+            --accent: #6366f1; /* Indigo */
+            --accent-hover: #4f46e5;
+            --accent-light: rgba(99, 102, 241, 0.1);
+            
+            --success: #10b981; /* Emerald */
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b; /* Amber */
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #f43f5e; /* Rose */
+            --danger-light: rgba(244, 63, 94, 0.1);
+            --info: #06b6d4; /* Cyan */
+            --info-light: rgba(6, 182, 212, 0.1);
+            
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(226, 232, 240, 0.8);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            --shadow-premium: 0 20px 25px -5px rgba(99, 102, 241, 0.05), 0 8px 10px -6px rgba(99, 102, 241, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #090d16;
+            --bg-secondary: #0f1524;
+            --bg-tertiary: #192135;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #1e293b;
+            
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(129, 140, 248, 0.15);
+            
+            --success: #34d399;
+            --success-light: rgba(52, 211, 153, 0.15);
+            --warning: #fbbf24;
+            --warning-light: rgba(251, 191, 36, 0.15);
+            --danger: #fb7185;
+            --danger-light: rgba(251, 113, 133, 0.15);
+            --info: #22d3ee;
+            --info-light: rgba(34, 211, 238, 0.15);
+            
+            --glass-bg: rgba(15, 21, 36, 0.85);
+            --glass-border: rgba(30, 41, 59, 0.8);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+            --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Global Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            transition: background-color var(--transition-normal), color var(--transition-normal);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        /* Scrollbars styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+            transition: background-color var(--transition-normal), border-color var(--transition-normal);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            border-radius: var(--border-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+        }
+
+        .brand-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand h1 {
+            font-size: 20px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, var(--text-primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand p {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        /* Actions in Header */
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .icon-btn:hover {
+            background-color: var(--accent-light);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Statistics Grid */
+        .stats-container {
+            padding: 20px 24px;
+            background-color: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: 12px 8px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-fast);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Control Panel / Actions */
+        .sidebar-actions {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--accent), #4f46e5);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+            transition: all var(--transition-fast);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+        }
+
+        .secondary-btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .secondary-btn {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            border-radius: var(--border-radius-md);
+            font-weight: 500;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .secondary-btn:hover {
+            background-color: var(--bg-tertiary);
+            border-color: var(--text-muted);
+        }
+
+        /* Zones List Area */
+        .zones-list-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #zones-count-badge {
+            background-color: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 10px 16px 10px 40px;
+            border-radius: var(--border-radius-md);
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: all var(--transition-fast);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: var(--bg-secondary);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Zone Cards */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .empty-state i {
+            width: 32px;
+            height: 32px;
+            color: var(--text-muted);
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .zone-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-normal);
+        }
+
+        .zone-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background-color: var(--zone-color, var(--accent));
+        }
+
+        .zone-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--text-muted);
+        }
+
+        .zone-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .zone-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .zone-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .zone-type {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 20px;
+            width: fit-content;
+        }
+
+        /* Category Tags Styles */
+        .tag-culture { background-color: var(--accent-light); color: var(--accent); }
+        .tag-sport { background-color: var(--success-light); color: var(--success); }
+        .tag-social { background-color: var(--warning-light); color: var(--warning); }
+        .tag-enfance { background-color: var(--danger-light); color: var(--danger); }
+        .tag-admin { background-color: var(--info-light); color: var(--info); }
+        .tag-autre { background-color: var(--bg-tertiary); color: var(--text-secondary); }
+
+        .zone-card-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 4px 0;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .meta-item i {
+            color: var(--text-muted);
+            width: 14px;
+            height: 14px;
+        }
+
+        .zone-card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+
+        .card-action-btn {
+            background: transparent;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: var(--border-radius-sm);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .card-action-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .card-action-btn i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .card-action-btn.delete-btn:hover {
+            background-color: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .card-action-btn.zoom-btn:hover {
+            background-color: var(--accent-light);
+            color: var(--accent);
+        }
+
+        /* Map Container */
+        .map-container {
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        /* Custom overlay panel on Map */
+        .map-overlay-card {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            z-index: 900;
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            padding: 16px;
+            width: 320px;
+            box-shadow: var(--shadow-lg);
+            transition: background-color var(--transition-normal), border-color var(--transition-normal);
+            pointer-events: auto;
+        }
+
+        .map-overlay-card h4 {
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .map-overlay-card p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Floating layer switch menu button styling */
+        .custom-leaflet-bar {
+            border: none !important;
+            box-shadow: var(--shadow-md) !important;
+        }
+
+        /* Right Detail/Editor panel (Dialog) */
+        .editor-panel-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-normal);
+        }
+
+        .editor-panel-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .editor-modal {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-xl);
+            width: 500px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            transform: scale(0.95);
+            transition: all var(--transition-normal);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-panel-backdrop.active .editor-modal {
+            transform: scale(1);
+        }
+
+        .editor-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor-header h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+        }
+
+        .editor-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: var(--border-radius-md);
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: all var(--transition-fast);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: var(--bg-secondary);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Color select options */
+        .color-picker-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+
+        .color-option.selected {
+            border-color: var(--text-primary);
+            transform: scale(1.1);
+        }
+
+        .color-option.selected::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .editor-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-md);
+            padding: 12px 20px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .toast.success i { color: var(--success); }
+        .toast.info i { color: var(--info); }
+        .toast.warning i { color: var(--warning); }
+        .toast.danger i { color: var(--danger); }
+
+        /* Center Marker custom styling */
+        .center-marker-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+        }
+
+        .center-marker-pin {
+            width: 36px;
+            height: 36px;
+            border-radius: 50% 50% 50% 0;
+            background: #f43f5e;
+            position: absolute;
+            transform: rotate(-45deg);
+            left: 50%;
+            top: 50%;
+            margin: -18px 0 0 -18px;
+            animation-name: bounce;
+            animation-fill-mode: both;
+            animation-duration: 1s;
+            box-shadow: 0 4px 10px rgba(244, 63, 94, 0.4);
+            border: 2px solid white;
+        }
+
+        .center-marker-pin::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            margin: 9px 0 0 9px;
+            background: white;
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        .center-marker-pulse {
+            background: rgba(244, 63, 94, 0.2);
+            border-radius: 50%;
+            height: 40px;
+            width: 40px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin: -20px 0 0 -20px;
+            transform: rotateX(55deg);
+            z-index: -2;
+            animation: pulsate 1.8s ease-out;
+            animation-iteration-count: infinite;
+            opacity: 0;
+        }
+
+        @keyframes pulsate {
+            0% {
+                transform: scale(0.1, 0.1);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.2, 1.2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes bounce {
+            0% {
+                opacity: 0;
+                transform: translateY(-2000px) rotate(-45deg);
+            }
+            60% {
+                opacity: 1;
+                transform: translateY(30px) rotate(-45deg);
+            }
+            80% {
+                transform: translateY(-10px) rotate(-45deg);
+            }
+            100% {
+                transform: translateY(0) rotate(-45deg);
+            }
+        }
+
+        /* Custom customization of Leaflet controls to match theme */
+        .leaflet-bar {
+            border: 1px solid var(--border-color) !important;
+            border-radius: var(--border-radius-md) !important;
+            overflow: hidden;
+        }
+
+        .leaflet-bar a {
+            background-color: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            transition: all var(--transition-fast) !important;
+        }
+
+        .leaflet-bar a:hover {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--accent) !important;
+        }
+
+        .leaflet-bar a.leaflet-disabled {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--text-muted) !important;
+        }
+
+        /* Hidden import input file */
+        #import-file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar Panel -->
+        <aside class="sidebar">
+            <!-- Header -->
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon-wrapper">
+                        <i data-lucide="map-pin"></i>
+                    </div>
+                    <div class="brand-info">
+                        <h1>ActivityMapper</h1>
+                        <p>CSC Libération</p>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                    <button id="theme-toggle" class="icon-btn" title="Basculer le thème (Clair / Sombre)">
+                        <i data-lucide="moon" id="theme-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total-zones">0</div>
+                    <div class="stat-label">Zones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total-area">0 m²</div>
+                    <div class="stat-label">Surface</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-main-activity">-</div>
+                    <div class="stat-label">Dominante</div>
+                </div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="sidebar-actions">
+                <button class="primary-btn" id="start-draw-btn">
+                    <i data-lucide="plus-circle"></i> Dessiner une zone
+                </button>
+                
+                <div class="secondary-btn-group">
+                    <button class="secondary-btn" id="export-geojson-btn">
+                        <i data-lucide="download"></i> Exporter GeoJSON
+                    </button>
+                    <button class="secondary-btn" id="trigger-import-btn">
+                        <i data-lucide="upload"></i> Importer
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json,.geojson">
+                </div>
+            </div>
+
+            <!-- Zones List Section -->
+            <div class="zones-list-container">
+                <div class="section-title">
+                    <span>Zones d'Activités</span>
+                    <span id="zones-count-badge">0</span>
+                </div>
+                
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-zones-input" placeholder="Rechercher une zone, un responsable...">
+                </div>
+
+                <div id="zones-list">
+                    <!-- Cards will be injected dynamically here -->
+                    <div class="empty-state" id="empty-state">
+                        <i data-lucide="layers"></i>
+                        <p>Aucune zone d'activité dessinée pour le moment. Cliquez sur "Dessiner une zone" ou utilisez la barre d'outils sur la droite pour commencer.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map Workspace -->
+        <main class="map-container">
+            <div id="map"></div>
+            
+            <!-- Map Overlay Card (Information about Center) -->
+            <div class="map-overlay-card">
+                <h4>Centre Socioculturel Libération</h4>
+                <p><i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>1 Rue du Chanoine Marcel Monflier</p>
+                <p style="margin-top: 4px; font-size: 11px; color: var(--text-muted);">
+                    Utilisez les outils de dessin sur la carte pour délimiter les zones de vos activités de stage.
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit/Create Zone Modal Dialog -->
+    <div class="editor-panel-backdrop" id="editor-modal-backdrop">
+        <div class="editor-modal">
+            <div class="editor-header">
+                <h3 id="modal-title">Créer une Zone d'Activité</h3>
+                <button class="icon-btn" id="close-modal-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="editor-body">
+                <form id="zone-editor-form">
+                    <div class="form-group">
+                        <label for="zone-name-input">Nom de la Zone / Activité</label>
+                        <input type="text" id="zone-name-input" class="form-control" placeholder="ex: Atelier Couture, Espace Ados, etc." required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="zone-type-select">Type d'Activité</label>
+                        <select id="zone-type-select" class="form-control" required>
+                            <option value="culture">Culturel & Créatif</option>
+                            <option value="sport">Sportif & Loisirs</option>
+                            <option value="social">Social & Solidarité</option>
+                            <option value="enfance">Enfance & Jeunesse</option>
+                            <option value="admin">Administratif / Logistique</option>
+                            <option value="autre">Autre / Usage polyvalent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="zone-manager-input">Responsable de l'Activité</label>
+                        <input type="text" id="zone-manager-input" class="form-control" placeholder="Nom de l'encadrant ou animateur">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="zone-capacity-input">Capacité d'Accueil (Max)</label>
+                        <input type="number" id="zone-capacity-input" class="form-control" min="0" placeholder="ex: 15 personnes">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Couleur d'Affichage</label>
+                        <div class="color-picker-group" id="color-picker-group">
+                            <div class="color-option selected" style="background-color: #6366f1;" data-color="#6366f1"></div>
+                            <div class="color-option" style="background-color: #10b981;" data-color="#10b981"></div>
+                            <div class="color-option" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
+                            <div class="color-option" style="background-color: #f43f5e;" data-color="#f43f5e"></div>
+                            <div class="color-option" style="background-color: #06b6d4;" data-color="#06b6d4"></div>
+                            <div class="color-option" style="background-color: #8b5cf6;" data-color="#8b5cf6"></div>
+                            <div class="color-option" style="background-color: #64748b;" data-color="#64748b"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="zone-desc-input">Description / Notes complémentaires</label>
+                        <textarea id="zone-desc-input" class="form-control" placeholder="Détails sur l'activité, matériel requis, horaires..."></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="editor-footer">
+                <button class="secondary-btn" id="cancel-modal-btn">Annuler</button>
+                <button class="primary-btn" id="save-zone-btn">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Leaflet Geoman JS -->
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Map Operations and Event Handling (Embedded) -->
+    <script>
+        /* -------------------------------------------------------------
+           ActivityMapper - JavaScript Logic
+           ------------------------------------------------------------- */
+
+        // Configuration coordinates for Centre Socioculturel de la Libération de Bar-le-Duc
+        const CSC_LAT = 48.7818989;
+        const CSC_LNG = 5.1489932;
+
+        // State management
+        let map = null;
+        let zones = []; // Array of zone metadata
+        let mapLayers = {}; // Map of zoneId -> Leaflet layer
+        let currentEditingId = null; // ID of the zone currently being edited in modal
+        let tempLayer = null; // Reference to newly drawn layer before saving
+        let selectedColor = '#6366f1'; // Default Indigo color
+
+        // Category labels translation
+        const categoryLabels = {
+            culture: "Culturel & Créatif",
+            sport: "Sportif & Loisirs",
+            social: "Social & Solidarité",
+            enfance: "Enfance & Jeunesse",
+            admin: "Administratif / Logistique",
+            autre: "Autre / Polyvalent"
+        };
+
+        // Preset colors palette mapping
+        const categoryColors = {
+            culture: '#6366f1', // Indigo
+            sport: '#10b981',   // Emerald
+            social: '#f59e0b',  // Amber
+            enfance: '#f43f5e', // Rose
+            admin: '#06b6d4',   // Cyan
+            autre: '#64748b'    // Slate
+        };
+
+        /* -------------------------------------------------------------
+           1. Initialization & Map Setup
+           ------------------------------------------------------------- */
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load state from local storage
+            loadZonesFromLocalStorage();
+
+            // Init Lucide Icons
+            lucide.createIcons();
+
+            // Init Theme Setup
+            initTheme();
+
+            // Init Leaflet Map
+            initMap();
+
+            // Setup Event Listeners
+            setupEventListeners();
+        });
+
+        function initMap() {
+            // Create Map
+            map = L.map('map', {
+                zoomControl: false // Positioned customly
+            }).setView([CSC_LAT, CSC_LNG], 17);
+
+            // Zoom control on top right
+            L.control.zoom({
+                position: 'topright'
+            }).addTo(map);
+
+            // Configure Tile Layers
+            const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 22,
+                maxNativeZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            });
+
+            const planIGN = L.tileLayer('https://data.geopf.fr/wmts?&REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&TILEMATRIXSET=PM&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}', {
+                maxZoom: 22,
+                maxNativeZoom: 19,
+                attribution: '© IGN (Plan V2)'
+            });
+
+            const orthoIGN = L.tileLayer('https://data.geopf.fr/wmts?&REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&TILEMATRIXSET=PM&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}', {
+                maxZoom: 22,
+                maxNativeZoom: 19,
+                attribution: '© IGN (Orthophotos)'
+            });
+
+            const darkMatter = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 22,
+                maxNativeZoom: 19,
+                attribution: '© OpenStreetMap, &copy; CARTO'
+            });
+
+            // Default tile depending on theme
+            const activeTheme = document.documentElement.getAttribute('data-theme');
+            if (activeTheme === 'dark') {
+                darkMatter.addTo(map);
+            } else {
+                planIGN.addTo(map);
+            }
+
+            // Add layer switch control
+            const baseMaps = {
+                "Plan IGN V2 (France)": planIGN,
+                "Orthophotos IGN (Satellite)": orthoIGN,
+                "Plan OpenStreetMap": osm,
+                "Mode Sombre": darkMatter
+            };
+
+            L.control.layers(baseMaps, null, {
+                position: 'bottomright'
+            }).addTo(map);
+
+            // Custom CSS style for Leaflet Controls
+            const controls = document.querySelectorAll('.leaflet-control-layers, .leaflet-bar');
+            controls.forEach(c => c.classList.add('custom-leaflet-bar'));
+
+            // Bouncing Pin Marker for Centre Socioculturel de la Libération
+            const centerIcon = L.divIcon({
+                className: 'center-marker-icon',
+                html: '<div class="center-marker-pin"></div><div class="center-marker-pulse"></div>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+            
+            const centerMarker = L.marker([CSC_LAT, CSC_LNG], { icon: centerIcon }).addTo(map);
+            centerMarker.bindPopup(`
+                <div style="font-family: 'Inter', sans-serif;">
+                    <b style="font-family: 'Outfit'; font-size:14px; color: #f43f5e;">Centre Socioculturel de la Libération</b>
+                    <p style="margin-top: 4px; font-size:12px;">1 Rue du Chanoine Marcel Monflier<br>55000 Bar-le-Duc</p>
+                </div>
+            `);
+
+            // Setup Leaflet Geoman Drawing Tools
+            map.pm.addControls({
+                position: 'topright',
+                drawMarker: false,
+                drawCircleMarker: false,
+                drawPolyline: false,
+                drawRectangle: true,
+                drawPolygon: true,
+                drawCircle: true,
+                editMode: true,
+                dragMode: true,
+                cutPolygon: false,
+                removalMode: true
+            });
+
+            // Configure Geoman global language
+            map.pm.setLang('fr');
+
+            // Customize Geoman Path style options
+            map.pm.setPathOptions({
+                color: '#6366f1',
+                fillColor: '#6366f1',
+                fillOpacity: 0.35,
+                weight: 3
+            });
+
+            // Draw Event: New Layer Drawn
+            map.on('pm:create', (e) => {
+                const layer = e.layer;
+                tempLayer = layer;
+                
+                // Show detail editor modal
+                openEditorModal(null, layer);
+            });
+
+            // Render saved layers onto map
+            renderSavedZonesOnMap();
+        }
+
+        /* -------------------------------------------------------------
+           2. Event Listeners
+           ------------------------------------------------------------- */
+        function setupEventListeners() {
+            // Theme Toggle
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+            // Start Draw Button in Sidebar
+            document.getElementById('start-draw-btn').addEventListener('click', () => {
+                map.pm.enableDraw('Polygon', {
+                    snappable: true,
+                    snapDistance: 20
+                });
+                showToast('Mode dessin activé. Cliquez sur la carte pour tracer un polygone.', 'info');
+            });
+
+            // Modal Action Buttons
+            document.getElementById('close-modal-btn').addEventListener('click', closeEditorModal);
+            document.getElementById('cancel-modal-btn').addEventListener('click', closeEditorModal);
+            document.getElementById('save-zone-btn').addEventListener('click', saveZoneData);
+
+            // Color Preset Selection
+            const colorOptions = document.querySelectorAll('.color-option');
+            colorOptions.forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    colorOptions.forEach(o => o.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    selectedColor = e.target.getAttribute('data-color');
+                });
+            });
+
+            // Dynamic Category Color changer (suggest best matching color on category change)
+            document.getElementById('zone-type-select').addEventListener('change', (e) => {
+                const cat = e.target.value;
+                const color = categoryColors[cat];
+                if (color) {
+                    // Find and select the corresponding preset color
+                    colorOptions.forEach(opt => {
+                        opt.classList.remove('selected');
+                        if (opt.getAttribute('data-color') === color) {
+                            opt.classList.add('selected');
+                            selectedColor = color;
+                        }
+                    });
+                }
+            });
+
+            // Search Zones Input
+            document.getElementById('search-zones-input').addEventListener('input', (e) => {
+                renderZonesList(e.target.value);
+            });
+
+            // GeoJSON Export
+            document.getElementById('export-geojson-btn').addEventListener('click', exportGeoJSON);
+
+            // GeoJSON Import Trigger
+            document.getElementById('trigger-import-btn').addEventListener('click', () => {
+                document.getElementById('import-file-input').click();
+            });
+
+            document.getElementById('import-file-input').addEventListener('change', importGeoJSON);
+        }
+
+        /* -------------------------------------------------------------
+           3. Editor Modal Controls (Create / Edit)
+           ------------------------------------------------------------- */
+        function openEditorModal(zoneId = null, leafletLayer = null) {
+            const modalBackdrop = document.getElementById('editor-modal-backdrop');
+            const modalTitle = document.getElementById('modal-title');
+            const form = document.getElementById('zone-editor-form');
+
+            // Reset Form
+            form.reset();
+            currentEditingId = zoneId;
+
+            // Default select color option reset
+            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+            
+            if (zoneId) {
+                // Mode: Edit Existing
+                modalTitle.textContent = "Modifier la Zone d'Activité";
+                const zone = zones.find(z => z.id === zoneId);
+                
+                document.getElementById('zone-name-input').value = zone.name;
+                document.getElementById('zone-type-select').value = zone.type;
+                document.getElementById('zone-manager-input').value = zone.manager || '';
+                document.getElementById('zone-capacity-input').value = zone.capacity || '';
+                document.getElementById('zone-desc-input').value = zone.description || '';
+                selectedColor = zone.color;
+                
+                // Select color in DOM
+                const targetColorOpt = document.querySelector(`.color-option[data-color="${selectedColor}"]`);
+                if (targetColorOpt) targetColorOpt.classList.add('selected');
+                else document.querySelector('.color-option').classList.add('selected');
+
+            } else {
+                // Mode: Create New (from drawn layer)
+                modalTitle.textContent = "Configurer la Nouvelle Zone";
+                
+                // Suggest default color based on category
+                const initialCategory = document.getElementById('zone-type-select').value;
+                selectedColor = categoryColors[initialCategory] || '#6366f1';
+                
+                const targetColorOpt = document.querySelector(`.color-option[data-color="${selectedColor}"]`);
+                if (targetColorOpt) targetColorOpt.classList.add('selected');
+            }
+
+            modalBackdrop.classList.add('active');
+        }
+
+        function closeEditorModal() {
+            document.getElementById('editor-modal-backdrop').classList.remove('active');
+            
+            // If we were creating a new zone and closed/cancelled, delete the layer from the map
+            if (!currentEditingId && tempLayer) {
+                map.removeLayer(tempLayer);
+                showToast('Création de zone annulée', 'info');
+            }
+            
+            tempLayer = null;
+            currentEditingId = null;
+        }
+
+        function saveZoneData() {
+            const nameInput = document.getElementById('zone-name-input');
+            
+            if (!nameInput.checkValidity()) {
+                nameInput.reportValidity();
+                return;
+            }
+
+            const name = nameInput.value;
+            const type = document.getElementById('zone-type-select').value;
+            const manager = document.getElementById('zone-manager-input').value;
+            const capacity = parseInt(document.getElementById('zone-capacity-input').value) || null;
+            const description = document.getElementById('zone-desc-input').value;
+
+            if (currentEditingId) {
+                // --- UPDATE EXISTING ZONE ---
+                const zoneIndex = zones.findIndex(z => z.id === currentEditingId);
+                if (zoneIndex !== -1) {
+                    zones[zoneIndex].name = name;
+                    zones[zoneIndex].type = type;
+                    zones[zoneIndex].manager = manager;
+                    zones[zoneIndex].capacity = capacity;
+                    zones[zoneIndex].color = selectedColor;
+                    zones[zoneIndex].description = description;
+
+                    // Update Map Layer style
+                    const layer = mapLayers[currentEditingId];
+                    if (layer) {
+                        setLayerStyle(layer, selectedColor);
+                        updateLayerPopup(layer, zones[zoneIndex]);
+                    }
+                    showToast("Zone d'activité mise à jour avec succès", "success");
+                }
+            } else {
+                // --- CREATE NEW ZONE ---
+                const newId = 'zone_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                
+                // Calculate dimensions
+                let area = 0;
+                let length = 0;
+                let shapeType = 'Polygon';
+
+                if (tempLayer instanceof L.Circle) {
+                    shapeType = 'Circle';
+                    area = Math.PI * Math.pow(tempLayer.getRadius(), 2);
+                    length = 2 * Math.PI * tempLayer.getRadius(); // Circumference
+                } else if (tempLayer instanceof L.Marker) {
+                    shapeType = 'Marker';
+                } else if (tempLayer instanceof L.Polyline && !(tempLayer instanceof L.Polygon)) {
+                    shapeType = 'Line';
+                    length = calculatePolylineLength(tempLayer.getLatLngs());
+                } else if (tempLayer instanceof L.Polygon) {
+                    shapeType = 'Polygon';
+                    area = calculatePolygonArea(tempLayer.getLatLngs()[0]);
+                    length = calculatePolylineLength(tempLayer.getLatLngs()[0]); // Perimeter
+                }
+
+                const newZone = {
+                    id: newId,
+                    name: name,
+                    type: type,
+                    manager: manager,
+                    capacity: capacity,
+                    color: selectedColor,
+                    description: description,
+                    shapeType: shapeType,
+                    area: Math.round(area),
+                    length: Math.round(length),
+                    geojson: tempLayer.toGeoJSON()
+                };
+
+                // If it's a circle, save extra geometry keys since standard GeoJSON converts circles to points
+                if (shapeType === 'Circle') {
+                    newZone.circleCenter = [tempLayer.getLatLng().lat, tempLayer.getLatLng().lng];
+                    newZone.circleRadius = tempLayer.getRadius();
+                }
+
+                // Apply visual style to drawn layer
+                setLayerStyle(tempLayer, selectedColor);
+                tempLayer.zoneId = newId;
+
+                // Save Layer References
+                mapLayers[newId] = tempLayer;
+                zones.push(newZone);
+
+                // Bind interactive events on this new layer
+                bindLayerEvents(tempLayer, newId);
+                updateLayerPopup(tempLayer, newZone);
+
+                showToast("Zone d'activité ajoutée à la carte !", "success");
+            }
+
+            // Save state, update side views and stats
+            saveZonesToLocalStorage();
+            renderZonesList();
+            updateStatistics();
+            
+            // Reset flags & close
+            tempLayer = null;
+            currentEditingId = null;
+            document.getElementById('editor-modal-backdrop').classList.remove('active');
+        }
+
+        /* -------------------------------------------------------------
+           4. Geometry Calculators
+           ------------------------------------------------------------- */
+        function calculatePolygonArea(latlngs) {
+            if (!latlngs || latlngs.length < 3) return 0;
+            
+            // Project geographic coordinates to planar coordinates in meters (local tangent plane approximation)
+            const latMid = latlngs.reduce((sum, ll) => sum + ll.lat, 0) / latlngs.length;
+            const rad = latMid * Math.PI / 180;
+            const metersPerLat = 111132.95;
+            const metersPerLng = 40075000 * Math.cos(rad) / 360;
+
+            const coords = latlngs.map(ll => ({
+                x: ll.lng * metersPerLng,
+                y: ll.lat * metersPerLat
+            }));
+
+            // Shoelace formula
+            let area = 0;
+            const n = coords.length;
+            for (let i = 0; i < n; i++) {
+                const j = (i + 1) % n;
+                area += coords[i].x * coords[j].y;
+                area -= coords[j].x * coords[i].y;
+            }
+            return Math.abs(area / 2);
+        }
+
+        function calculatePolylineLength(latlngs) {
+            if (!latlngs || latlngs.length < 2) return 0;
+            let length = 0;
+
+            // Support nested arrays (drawn rectangles or multi-vertices)
+            const points = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
+
+            for (let i = 0; i < points.length - 1; i++) {
+                // Use Leaflet's built-in spherical distance calculator (returns meters)
+                length += L.latLng(points[i]).distanceTo(L.latLng(points[i+1]));
+            }
+            
+            // For Polygons/Rectangles, close the loop length (perimeter)
+            if (latlngs.length > 2 && latlngs[0] !== latlngs[latlngs.length-1]) {
+                length += L.latLng(points[points.length-1]).distanceTo(L.latLng(points[0]));
+            }
+            return length;
+        }
+
+        /* -------------------------------------------------------------
+           5. Layer Style & Popups Binding
+           ------------------------------------------------------------- */
+        function setLayerStyle(layer, color) {
+            if (layer instanceof L.Marker && !(layer instanceof L.CircleMarker)) {
+                // Standard Marker color change using Leaflet filters or marker tint (using CSS filter on icon)
+                if (layer.getElement()) {
+                    layer.getElement().style.filter = `hue-rotate(${getHueRotateDegree(color)}deg) saturate(1.5)`;
+                }
+            } else if (layer.setStyle) {
+                layer.setStyle({
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.35,
+                    weight: 3
+                });
+            }
+        }
+
+        function updateLayerPopup(layer, zone) {
+            const capacityText = zone.capacity ? `<br><b>Capacité:</b> ${zone.capacity} pers.` : '';
+            const managerText = zone.manager ? `<br><b>Responsable:</b> ${zone.manager}` : '';
+            const areaText = zone.area > 0 ? `<br><b>Surface:</b> ${formatArea(zone.area)}` : '';
+            const descText = zone.description ? `<hr style="margin:6px 0; border:none; border-top:1px solid #ddd;"><p style="margin:0; font-size:11px; color:#666;">${zone.description}</p>` : '';
+
+            layer.bindPopup(`
+                <div style="font-family: 'Inter', sans-serif; min-width: 180px;">
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom: 4px;">
+                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${zone.color};"></span>
+                        <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:#999;">${categoryLabels[zone.type]}</span>
+                    </div>
+                    <b style="font-family: 'Outfit'; font-size:14px; color: #1e293b;">${zone.name}</b>
+                    <div style="font-size:12px; margin-top:4px; line-height: 1.4; color: #475569;">
+                        ${managerText}
+                        ${capacityText}
+                        ${areaText}
+                    </div>
+                    ${descText}
+                </div>
+            `);
+        }
+
+        function bindLayerEvents(layer, zoneId) {
+            // When a layer is updated (dragged, resized, edited vertices)
+            layer.on('pm:edit', () => {
+                updateZoneGeometry(zoneId, layer);
+            });
+
+            // When a layer is deleted using Geoman's delete tool
+            layer.on('pm:remove', () => {
+                deleteZone(zoneId, false); // false = don't remove from map since Leaflet already did it
+            });
+        }
+
+        function updateZoneGeometry(zoneId, layer) {
+            const zoneIndex = zones.findIndex(z => z.id === zoneId);
+            if (zoneIndex !== -1) {
+                let area = 0;
+                let length = 0;
+
+                if (layer instanceof L.Circle) {
+                    area = Math.PI * Math.pow(layer.getRadius(), 2);
+                    length = 2 * Math.PI * layer.getRadius();
+                    zones[zoneIndex].circleRadius = layer.getRadius();
+                    zones[zoneIndex].circleCenter = [layer.getLatLng().lat, layer.getLatLng().lng];
+                } else if (layer instanceof L.Polygon) {
+                    area = calculatePolygonArea(layer.getLatLngs()[0]);
+                    length = calculatePolylineLength(layer.getLatLngs()[0]);
+                } else if (layer instanceof L.Polyline) {
+                    length = calculatePolylineLength(layer.getLatLngs());
+                }
+
+                zones[zoneIndex].area = Math.round(area);
+                zones[zoneIndex].length = Math.round(length);
+                zones[zoneIndex].geojson = layer.toGeoJSON();
+
+                saveZonesToLocalStorage();
+                renderZonesList();
+                updateStatistics();
+                updateLayerPopup(layer, zones[zoneIndex]);
+                showToast("Forme redimensionnée. Dimensions mises à jour.", "info");
+            }
+        }
+
+        /* -------------------------------------------------------------
+           6. UI Lists & Statistics Updates
+           ------------------------------------------------------------- */
+        function renderZonesList(searchFilter = '') {
+            const listContainer = document.getElementById('zones-list');
+            const badge = document.getElementById('zones-count-badge');
+            
+            // Clear list
+            listContainer.innerHTML = '';
+            
+            const query = searchFilter.toLowerCase().trim();
+            const filtered = zones.filter(z => 
+                z.name.toLowerCase().includes(query) || 
+                categoryLabels[z.type].toLowerCase().includes(query) ||
+                (z.manager && z.manager.toLowerCase().includes(query)) ||
+                (z.description && z.description.toLowerCase().includes(query))
+            );
+
+            badge.textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="${searchFilter ? 'search' : 'layers'}"></i>
+                        <p>${searchFilter ? 'Aucun résultat trouvé pour votre recherche.' : 'Aucune zone d\'activité dessinée pour le moment. Tracez des polygones pour commencer.'}</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            filtered.forEach(zone => {
+                const card = document.createElement('div');
+                card.className = 'zone-card';
+                card.style.setProperty('--zone-color', zone.color);
+                
+                const areaBadge = zone.area > 0 ? `<div class="meta-item"><i data-lucide="maximize"></i><span>${formatArea(zone.area)}</span></div>` : '';
+                const capBadge = zone.capacity ? `<div class="meta-item"><i data-lucide="users"></i><span>${zone.capacity} pers. max</span></div>` : '';
+                const managerBadge = zone.manager ? `<div class="meta-item"><i data-lucide="user"></i><span>${zone.manager}</span></div>` : '';
+                const perimeterBadge = zone.length > 0 && zone.shapeType !== 'Marker' ? `<div class="meta-item"><i data-lucide="navigation"></i><span>Périmètre: ${formatLength(zone.length)}</span></div>` : '';
+
+                card.innerHTML = `
+                    <div class="zone-card-header">
+                        <div class="zone-title-group">
+                            <span class="zone-name">${escapeHTML(zone.name)}</span>
+                            <span class="zone-type tag-${zone.type}">${categoryLabels[zone.type]}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="zone-card-meta">
+                        ${areaBadge}
+                        ${perimeterBadge}
+                        ${managerBadge}
+                        ${capBadge}
+                    </div>
+
+                    <div class="zone-card-actions">
+                        <button class="card-action-btn zoom-btn" title="Centrer la carte sur cette zone" data-id="${zone.id}">
+                            <i data-lucide="locate"></i>
+                        </button>
+                        <button class="card-action-btn edit-btn" title="Modifier les attributs" data-id="${zone.id}">
+                            <i data-lucide="edit-3"></i>
+                        </button>
+                        <button class="card-action-btn delete-btn" title="Supprimer la zone" data-id="${zone.id}">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
+                `;
+
+                listContainer.appendChild(card);
+            });
+
+            // Hook buttons on cards
+            listContainer.querySelectorAll('.zoom-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    zoomToZone(id);
+                });
+            });
+
+            listContainer.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    openEditorModal(id);
+                });
+            });
+
+            listContainer.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    if(confirm("Êtes-vous sûr de vouloir supprimer cette zone d'activité ?")) {
+                        deleteZone(id);
+                    }
+                });
+            });
+
+            // Refresh lucide icons
+            lucide.createIcons();
+        }
+
+        function updateStatistics() {
+            // 1. Total zones count
+            document.getElementById('stat-total-zones').textContent = zones.length;
+
+            // 2. Cumulative Area
+            const totalArea = zones.reduce((sum, z) => sum + (z.area || 0), 0);
+            document.getElementById('stat-total-area').textContent = formatArea(totalArea);
+
+            // 3. Dominant activity category
+            const catCounts = {};
+            zones.forEach(z => {
+                catCounts[z.type] = (catCounts[z.type] || 0) + 1;
+            });
+
+            let maxCount = 0;
+            let dominantCat = '-';
+            for (const cat in catCounts) {
+                if (catCounts[cat] > maxCount) {
+                    maxCount = catCounts[cat];
+                    dominantCat = categoryLabels[cat];
+                }
+            }
+            
+            // Shorten if too long
+            if (dominantCat.length > 18) {
+                dominantCat = dominantCat.split('&')[0].split('/')[0].trim();
+            }
+            
+            document.getElementById('stat-main-activity').textContent = dominantCat;
+        }
+
+        function zoomToZone(zoneId) {
+            const layer = mapLayers[zoneId];
+            if (layer) {
+                if (layer instanceof L.Marker) {
+                    map.setView(layer.getLatLng(), 18);
+                } else if (layer.getBounds) {
+                    map.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 19 });
+                }
+                layer.openPopup();
+            }
+        }
+
+        function deleteZone(zoneId, removeLayerFromMap = true) {
+            // Remove layer from map
+            if (removeLayerFromMap) {
+                const layer = mapLayers[zoneId];
+                if (layer) map.removeLayer(layer);
+            }
+
+            // Clean references
+            delete mapLayers[zoneId];
+            zones = zones.filter(z => z.id !== zoneId);
+
+            // Persist
+            saveZonesToLocalStorage();
+            renderZonesList();
+            updateStatistics();
+            
+            showToast("Zone d'activité supprimée", "warning");
+        }
+
+        /* -------------------------------------------------------------
+           7. Local Storage & Map Reconstruction
+           ------------------------------------------------------------- */
+        function saveZonesToLocalStorage() {
+            localStorage.setItem('csc_liberation_zones', JSON.stringify(zones));
+        }
+
+        function loadZonesFromLocalStorage() {
+            const stored = localStorage.getItem('csc_liberation_zones');
+            if (stored) {
+                try {
+                    zones = JSON.parse(stored);
+                } catch (e) {
+                    console.error("Failed parsing stored zones data", e);
+                    zones = [];
+                }
+            }
+        }
+
+        function renderSavedZonesOnMap() {
+            zones.forEach(zone => {
+                let layer;
+                
+                if (zone.shapeType === 'Circle' && zone.circleCenter) {
+                    // Reconstruct circles (standard geojson converts them to points, so we load using stored circleCenter & radius)
+                    layer = L.circle(zone.circleCenter, { radius: zone.circleRadius });
+                } else if (zone.geojson) {
+                    // Convert standard GeoJSON geometry to Leaflet layer
+                    layer = L.GeoJSON.geometryToLayer(zone.geojson);
+                }
+
+                if (layer) {
+                    setLayerStyle(layer, zone.color);
+                    layer.zoneId = zone.id;
+                    layer.addTo(map);
+
+                    // Save reference
+                    mapLayers[zone.id] = layer;
+
+                    // Bind triggers
+                    bindLayerEvents(layer, zone.id);
+                    updateLayerPopup(layer, zone);
+                }
+            });
+
+            renderZonesList();
+            updateStatistics();
+        }
+
+        /* -------------------------------------------------------------
+           8. Import / Export GeoJSON
+           ------------------------------------------------------------- */
+        function exportGeoJSON() {
+            if (zones.length === 0) {
+                showToast("Aucune zone à exporter !", "warning");
+                return;
+            }
+
+            // Convert our list into a FeatureCollection GeoJSON format
+            const features = zones.map(z => {
+                const feature = {
+                    type: "Feature",
+                    geometry: z.geojson.geometry || z.geojson,
+                    properties: {
+                        id: z.id,
+                        name: z.name,
+                        type: z.type,
+                        manager: z.manager,
+                        capacity: z.capacity,
+                        color: z.color,
+                        description: z.description,
+                        area: z.area,
+                        length: z.length,
+                        shapeType: z.shapeType
+                    }
+                };
+
+                // Add circle specifics
+                if (z.shapeType === 'Circle') {
+                    feature.properties.circleRadius = z.circleRadius;
+                    feature.properties.circleCenter = z.circleCenter;
+                }
+
+                return feature;
+            });
+
+            const featureCollection = {
+                type: "FeatureCollection",
+                crs: {
+                    type: "name",
+                    properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" }
+                },
+                features: features
+            };
+
+            // Trigger file download
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(featureCollection, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `zones-activites-bar-le-duc-${new Date().toISOString().slice(0,10)}.geojson`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showToast("GeoJSON exporté avec succès", "success");
+        }
+
+        function importGeoJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.features || !Array.isArray(data.features)) {
+                        showToast("Fichier invalide : Format GeoJSON FeatureCollection requis", "danger");
+                        return;
+                    }
+
+                    let importedCount = 0;
+
+                    data.features.forEach(feature => {
+                        const props = feature.properties || {};
+                        const geom = feature.geometry || feature;
+
+                        const newId = 'zone_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '_' + importedCount;
+                        const shapeType = props.shapeType || (geom.type === 'Point' ? (props.circleRadius ? 'Circle' : 'Marker') : (geom.type === 'LineString' ? 'Line' : 'Polygon'));
+
+                        let area = props.area || 0;
+                        let length = props.length || 0;
+
+                        // Reconstruct leaflet layer to calculate if missing
+                        let layer;
+                        if (shapeType === 'Circle' && props.circleCenter) {
+                            layer = L.circle(props.circleCenter, { radius: props.circleRadius });
+                            area = area || Math.PI * Math.pow(props.circleRadius, 2);
+                            length = length || 2 * Math.PI * props.circleRadius;
+                        } else {
+                            layer = L.GeoJSON.geometryToLayer(feature);
+                            
+                            if (layer instanceof L.Polygon) {
+                                area = area || calculatePolygonArea(layer.getLatLngs()[0]);
+                                length = length || calculatePolylineLength(layer.getLatLngs()[0]);
+                            } else if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+                                length = length || calculatePolylineLength(layer.getLatLngs());
+                            }
+                        }
+
+                        if (layer) {
+                            const color = props.color || categoryColors[props.type || 'autre'] || '#6366f1';
+                            
+                            const newZone = {
+                                id: newId,
+                                name: props.name || "Zone importée",
+                                type: props.type || "autre",
+                                manager: props.manager || "",
+                                capacity: props.capacity || null,
+                                color: color,
+                                description: props.description || "",
+                                shapeType: shapeType,
+                                area: Math.round(area),
+                                length: Math.round(length),
+                                geojson: layer.toGeoJSON()
+                            };
+
+                            if (shapeType === 'Circle') {
+                                newZone.circleCenter = props.circleCenter;
+                                newZone.circleRadius = props.circleRadius;
+                            }
+
+                            // Add layer to map
+                            setLayerStyle(layer, color);
+                            layer.zoneId = newId;
+                            layer.addTo(map);
+
+                            // Store
+                            mapLayers[newId] = layer;
+                            zones.push(newZone);
+
+                            // Hook
+                            bindLayerEvents(layer, newId);
+                            updateLayerPopup(layer, newZone);
+
+                            importedCount++;
+                        }
+                    });
+
+                    if (importedCount > 0) {
+                        saveZonesToLocalStorage();
+                        renderZonesList();
+                        updateStatistics();
+                        showToast(`${importedCount} zone(s) d'activité importée(s)`, "success");
+                    } else {
+                        showToast("Aucune forme géométrique valide trouvée dans le fichier", "warning");
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    showToast("Erreur lors de la lecture du fichier JSON", "danger");
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset input so importing the same file again triggers change event
+            event.target.value = '';
+        }
+
+        /* -------------------------------------------------------------
+           9. Helper Utilities
+           ------------------------------------------------------------- */
+        function formatArea(areaSqMeters) {
+            if (areaSqMeters >= 10000) {
+                return (areaSqMeters / 10000).toFixed(2) + ' ha';
+            }
+            return areaSqMeters.toLocaleString() + ' m²';
+        }
+
+        function formatLength(meters) {
+            if (meters >= 1000) {
+                return (meters / 1000).toFixed(2) + ' km';
+            }
+            return meters.toLocaleString() + ' m';
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // Map a hex color color to rotation degree filter value (so marker pins can be colored on the fly)
+        function getHueRotateDegree(hex) {
+            switch(hex) {
+                case '#10b981': return 140; // Emerald -> Green
+                case '#f59e0b': return 40;  // Amber -> Orange/Yellow
+                case '#f43f5e': return 0;   // Rose -> Red (Default)
+                case '#06b6d4': return 190; // Cyan -> Light Blue
+                case '#8b5cf6': return 270; // Violet -> Purple
+                case '#6366f1': return 230; // Indigo -> Blue
+                case '#64748b': return 210; // Slate -> BlueGrey
+                default: return 230;
+            }
+        }
+
+        /* -------------------------------------------------------------
+           10. Toast Notification System
+           ------------------------------------------------------------- */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            // Choose icon depending on type
+            let iconName = 'info';
+            if (type === 'success') iconName = 'check-circle';
+            if (type === 'warning') iconName = 'alert-triangle';
+            if (type === 'danger') iconName = 'x-circle';
+
+            toast.innerHTML = `
+                <i data-lucide="${iconName}"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Trigger sliding animation
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 50);
+
+            // Auto delete toast after 4s
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000);
+        }
+
+        /* -------------------------------------------------------------
+           11. Theme Management (Light / Dark)
+           ------------------------------------------------------------- */
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+
+            // Switch maps based on active theme
+            if (map) {
+                let currentActiveLayerName = 'plan';
+                
+                map.eachLayer(layer => {
+                    if (layer instanceof L.TileLayer) {
+                        const url = layer._url;
+                        if (url.includes('openstreetmap')) currentActiveLayerName = 'osm';
+                        else if (url.includes('cartocdn')) currentActiveLayerName = 'dark';
+                        else if (url.includes('geopf.fr') && url.includes('ORTHOPHOTOS')) currentActiveLayerName = 'sat';
+                        else if (url.includes('geopf.fr') && url.includes('PLANIGNV2')) currentActiveLayerName = 'plan';
+                    }
+                });
+
+                if (currentActiveLayerName === 'plan' && newTheme === 'dark') {
+                    map.eachLayer(layer => { if (layer instanceof L.TileLayer) map.removeLayer(layer); });
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 22, maxNativeZoom: 19, attribution: '© OpenStreetMap, &copy; CARTO' }).addTo(map);
+                } else if (currentActiveLayerName === 'dark' && newTheme === 'light') {
+                    map.eachLayer(layer => { if (layer instanceof L.TileLayer) map.removeLayer(layer); });
+                    L.tileLayer('https://data.geopf.fr/wmts?&REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&TILEMATRIXSET=PM&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}', { maxZoom: 22, maxNativeZoom: 19, attribution: '© IGN (Plan V2)' }).addTo(map);
+                }
+            }
+
+            showToast(`Mode ${newTheme === 'dark' ? 'sombre' : 'clair'} activé`, 'info');
+        }
+
+        function updateThemeIcon(theme) {
+            const iconEl = document.getElementById('theme-icon');
+            if (!iconEl) return;
+
+            if (theme === 'dark') {
+                iconEl.setAttribute('data-lucide', 'sun');
+            } else {
+                iconEl.setAttribute('data-lucide', 'moon');
+            }
+            
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
