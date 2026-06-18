@@ -2198,13 +2198,72 @@
         }
 
         function exportMapAsPDF() {
-            showToast("Génération du PDF en cours...", "info");
+            showToast("Génération du PDF avec légende...", "info");
             
             const mapElement = document.getElementById('map');
             
             // Hide Leaflet controls for clean render
             const controls = document.querySelectorAll('.leaflet-control-container');
             controls.forEach(c => c.style.display = 'none');
+
+            // Build temporary legend matching the active theme
+            const activeTheme = document.documentElement.getAttribute('data-theme');
+            const isDark = activeTheme === 'dark';
+
+            let legendHTML = `
+                <div style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: ${isDark ? '#f8fafc' : '#0f172a'}; margin-bottom: 4px; border-bottom: 2px solid #6366f1; padding-bottom: 6px;">
+                    Légende des Zones
+                </div>
+                <div style="font-size: 9px; color: #94a3b8; font-weight: 500; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                    CSC de la Libération, Bar-le-Duc
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+            `;
+
+            if (zones.length === 0) {
+                legendHTML += `
+                    <div style="font-size: 11px; color: #94a3b8; font-style: italic; text-align: center; padding: 6px 0;">
+                        Aucune zone d'activité
+                    </div>
+                `;
+            } else {
+                zones.forEach(zone => {
+                    const capText = zone.capacity ? ` (${zone.capacity} pers.)` : '';
+                    const areaText = zone.area > 0 ? ` - ${formatArea(zone.area)}` : '';
+                    legendHTML += `
+                        <div style="display: flex; align-items: flex-start; gap: 6px;">
+                            <span style="display: block; width: 10px; height: 10px; border-radius: 2px; background-color: ${zone.color}; margin-top: 2px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15);"></span>
+                            <div style="display: flex; flex-direction: column; line-height: 1.1;">
+                                <span style="font-size: 11px; font-weight: 600; color: ${isDark ? '#e2e8f0' : '#1e293b'};">${escapeHTML(zone.name)}</span>
+                                <span style="font-size: 9px; color: #94a3b8;">${categoryLabels[zone.type]}${areaText}${capText}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            legendHTML += `
+                </div>
+                <div style="margin-top: 10px; padding-top: 6px; border-top: 1px solid ${isDark ? '#1e293b' : '#f1f5f9'}; font-size: 8px; color: #94a3b8; text-align: right;">
+                    Exporté le ${new Date().toLocaleDateString('fr-FR')}
+                </div>
+            `;
+
+            const legendCard = document.createElement('div');
+            legendCard.id = 'temp-pdf-legend';
+            legendCard.style.position = 'absolute';
+            legendCard.style.top = '24px';
+            legendCard.style.left = '24px';
+            legendCard.style.zIndex = '9999';
+            legendCard.style.backgroundColor = isDark ? '#0f1524' : '#ffffff';
+            legendCard.style.border = `1px solid ${isDark ? '#1e293b' : '#cbd5e1'}`;
+            legendCard.style.borderRadius = '8px';
+            legendCard.style.padding = '12px';
+            legendCard.style.width = '220px';
+            legendCard.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)';
+            legendCard.innerHTML = legendHTML;
+
+            mapElement.appendChild(legendCard);
 
             setTimeout(() => {
                 html2canvas(mapElement, {
@@ -2213,8 +2272,9 @@
                     logging: false,
                     scale: 2 // Boost resolution quality
                 }).then(canvas => {
-                    // Restore controls
+                    // Restore controls & remove legend
                     controls.forEach(c => c.style.display = '');
+                    legendCard.remove();
 
                     try {
                         const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -2229,14 +2289,15 @@
                         pdf.addImage(imgData, 'JPEG', 0, 0, width / 2, height / 2);
                         pdf.save(`carte-zones-activites-${new Date().toISOString().slice(0,10)}.pdf`);
                         
-                        showToast("PDF téléchargé avec succès", "success");
+                        showToast("PDF avec légende téléchargé !", "success");
                     } catch (err) {
                         console.error("Export PDF error:", err);
-                        showToast("Erreur lors de la génération du PDF (limite CORS).", "danger");
+                        showToast("Erreur lors de la génération du PDF", "danger");
                     }
                 }).catch(err => {
                     console.error("html2canvas error:", err);
                     controls.forEach(c => c.style.display = '');
+                    legendCard.remove();
                     showToast("Erreur lors du rendu du PDF", "danger");
                 });
             }, 150);
