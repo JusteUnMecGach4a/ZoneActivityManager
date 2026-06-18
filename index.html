@@ -892,6 +892,22 @@
         #import-file-input {
             display: none;
         }
+
+        /* Centered zone label badge */
+        .zone-label {
+            background: rgba(15, 23, 42, 0.75) !important;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            font-size: 11px !important;
+            padding: 4px 8px !important;
+            border-radius: 6px !important;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -2px rgba(0,0,0,0.2) !important;
+            white-space: nowrap;
+            transition: all var(--transition-fast) !important;
+        }
     </style>
 </head>
 <body>
@@ -925,8 +941,8 @@
                     <div class="stat-label">Zones</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="stat-total-area">0 m²</div>
-                    <div class="stat-label">Surface</div>
+                    <div class="stat-value" id="stat-total-capacity">0</div>
+                    <div class="stat-label">Capacité</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="stat-main-activity">-</div>
@@ -1450,6 +1466,7 @@
                     if (layer) {
                         setLayerStyle(layer, selectedColor);
                         updateLayerPopup(layer, zones[zoneIndex]);
+                        updateLayerLabel(layer, zones[zoneIndex]);
                     }
                     showToast("Zone d'activité mise à jour avec succès", "success");
                 }
@@ -1508,6 +1525,7 @@
                 // Bind interactive events on this new layer
                 bindLayerEvents(tempLayer, newId);
                 updateLayerPopup(tempLayer, newZone);
+                updateLayerLabel(tempLayer, newZone);
 
                 showToast("Zone d'activité ajoutée à la carte !", "success");
             }
@@ -1592,7 +1610,6 @@
         function updateLayerPopup(layer, zone) {
             const capacityText = zone.capacity ? `<br><b>Capacité:</b> ${zone.capacity} pers.` : '';
             const managerText = zone.manager ? `<br><b>Responsable:</b> ${zone.manager}` : '';
-            const areaText = zone.area > 0 ? `<br><b>Surface:</b> ${formatArea(zone.area)}` : '';
             const descText = zone.description ? `<hr style="margin:6px 0; border:none; border-top:1px solid #ddd;"><p style="margin:0; font-size:11px; color:#666;">${zone.description}</p>` : '';
 
             layer.bindPopup(`
@@ -1605,11 +1622,29 @@
                     <div style="font-size:12px; margin-top:4px; line-height: 1.4; color: #475569;">
                         ${managerText}
                         ${capacityText}
-                        ${areaText}
                     </div>
                     ${descText}
                 </div>
             `);
+        }
+
+        function updateLayerLabel(layer, zone) {
+            layer.unbindTooltip();
+            
+            let tooltipOptions = {
+                permanent: true,
+                className: 'zone-label',
+                interactive: false
+            };
+
+            if (layer instanceof L.Marker && !(layer instanceof L.Circle)) {
+                tooltipOptions.direction = 'top';
+                tooltipOptions.offset = L.point(0, -20);
+            } else {
+                tooltipOptions.direction = 'center';
+            }
+
+            layer.bindTooltip(escapeHTML(zone.name), tooltipOptions);
         }
 
         function bindLayerEvents(layer, zoneId) {
@@ -1621,6 +1656,35 @@
             // When a layer is deleted using Geoman's delete tool
             layer.on('pm:remove', () => {
                 deleteZone(zoneId, false); // false = don't remove from map since Leaflet already did it
+            });
+
+            // Hover effects for layer and its floating text label
+            layer.on('mouseover', () => {
+                if (layer.setStyle) {
+                    layer.setStyle({ fillOpacity: 0.55, weight: 4 });
+                }
+                const zone = zones.find(z => z.id === zoneId);
+                const tooltip = layer.getTooltip();
+                if (zone && tooltip && tooltip.getElement()) {
+                    tooltip.getElement().style.backgroundColor = zone.color;
+                    tooltip.getElement().style.borderColor = 'rgba(255,255,255,0.4)';
+                }
+            });
+
+            layer.on('mouseout', () => {
+                const zone = zones.find(z => z.id === zoneId);
+                if (layer.setStyle) {
+                    layer.setStyle({ 
+                        fillOpacity: 0.35, 
+                        weight: 3,
+                        color: zone ? zone.color : '#6366f1'
+                    });
+                }
+                const tooltip = layer.getTooltip();
+                if (tooltip && tooltip.getElement()) {
+                    tooltip.getElement().style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
+                    tooltip.getElement().style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                }
             });
         }
 
@@ -1690,10 +1754,8 @@
                 card.className = 'zone-card';
                 card.style.setProperty('--zone-color', zone.color);
                 
-                const areaBadge = zone.area > 0 ? `<div class="meta-item"><i data-lucide="maximize"></i><span>${formatArea(zone.area)}</span></div>` : '';
                 const capBadge = zone.capacity ? `<div class="meta-item"><i data-lucide="users"></i><span>${zone.capacity} pers. max</span></div>` : '';
                 const managerBadge = zone.manager ? `<div class="meta-item"><i data-lucide="user"></i><span>${zone.manager}</span></div>` : '';
-                const perimeterBadge = zone.length > 0 && zone.shapeType !== 'Marker' ? `<div class="meta-item"><i data-lucide="navigation"></i><span>Périmètre: ${formatLength(zone.length)}</span></div>` : '';
 
                 card.innerHTML = `
                     <div class="zone-card-header">
@@ -1704,8 +1766,6 @@
                     </div>
                     
                     <div class="zone-card-meta">
-                        ${areaBadge}
-                        ${perimeterBadge}
                         ${managerBadge}
                         ${capBadge}
                     </div>
@@ -1758,9 +1818,9 @@
             // 1. Total zones count
             document.getElementById('stat-total-zones').textContent = zones.length;
 
-            // 2. Cumulative Area
-            const totalArea = zones.reduce((sum, z) => sum + (z.area || 0), 0);
-            document.getElementById('stat-total-area').textContent = formatArea(totalArea);
+            // 2. Cumulative Capacity
+            const totalCapacity = zones.reduce((sum, z) => sum + (z.capacity || 0), 0);
+            document.getElementById('stat-total-capacity').textContent = totalCapacity;
 
             // 3. Dominant activity category
             const catCounts = {};
@@ -1858,6 +1918,7 @@
                     // Bind triggers
                     bindLayerEvents(layer, zone.id);
                     updateLayerPopup(layer, zone);
+                    updateLayerLabel(layer, zone);
                 }
             });
 
@@ -2000,6 +2061,7 @@
                             // Hook
                             bindLayerEvents(layer, newId);
                             updateLayerPopup(layer, newZone);
+                            updateLayerLabel(layer, newZone);
 
                             importedCount++;
                         }
@@ -2241,13 +2303,13 @@
             } else {
                 zones.forEach(zone => {
                     const capText = zone.capacity ? ` (${zone.capacity} pers.)` : '';
-                    const areaText = zone.area > 0 ? ` - ${formatArea(zone.area)}` : '';
+                    const managerText = zone.manager ? ` - Resp: ${zone.manager}` : '';
                     legendHTML += `
                         <div style="display: flex; align-items: flex-start; gap: 6px;">
                             <span style="display: block; width: 10px; height: 10px; border-radius: 2px; background-color: ${zone.color}; margin-top: 2px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15);"></span>
                             <div style="display: flex; flex-direction: column; line-height: 1.1;">
                                 <span style="font-size: 11px; font-weight: 600; color: ${isDark ? '#e2e8f0' : '#1e293b'};">${escapeHTML(zone.name)}</span>
-                                <span style="font-size: 9px; color: #94a3b8;">${categoryLabels[zone.type]}${areaText}${capText}</span>
+                                <span style="font-size: 9px; color: #94a3b8;">${categoryLabels[zone.type]}${managerText}${capText}</span>
                             </div>
                         </div>
                     `;
