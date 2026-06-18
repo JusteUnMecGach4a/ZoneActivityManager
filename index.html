@@ -949,6 +949,15 @@
                     </button>
                     <input type="file" id="import-file-input" accept=".json,.geojson">
                 </div>
+
+                <div class="secondary-btn-group">
+                    <button class="secondary-btn" id="export-image-btn" title="Télécharger la carte en image PNG">
+                        <i data-lucide="image"></i> Image (PNG)
+                    </button>
+                    <button class="secondary-btn" id="export-pdf-btn" title="Télécharger la carte en PDF">
+                        <i data-lucide="file-text"></i> PDF
+                    </button>
+                </div>
             </div>
 
             <!-- Zones List Section -->
@@ -1066,6 +1075,12 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- html2canvas for map image capture -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- jsPDF for map PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Map Operations and Event Handling (Embedded) -->
     <script>
         /* -------------------------------------------------------------
@@ -1154,6 +1169,33 @@
                 attribution: '© IGN (Orthophotos)'
             });
 
+            const googleRoadmap = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 22,
+                maxNativeZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '© Google Maps'
+            });
+
+            const googleSatellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                maxZoom: 22,
+                maxNativeZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '© Google Maps'
+            });
+
+            const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 22,
+                maxNativeZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '© Google Maps'
+            });
+
+            const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                maxZoom: 22,
+                maxNativeZoom: 17,
+                attribution: '© OpenTopoMap, OpenStreetMap'
+            });
+
             const darkMatter = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 22,
                 maxNativeZoom: 19,
@@ -1171,7 +1213,11 @@
             // Add layer switch control
             const baseMaps = {
                 "Plan IGN V2 (France)": planIGN,
-                "Orthophotos IGN (Satellite)": orthoIGN,
+                "Orthophotos IGN (Récent)": orthoIGN,
+                "Google Maps (Standard)": googleRoadmap,
+                "Google Maps (Satellite)": googleSatellite,
+                "Google Maps (Hybride)": googleHybrid,
+                "Topographique (OpenTopo)": openTopo,
                 "Plan OpenStreetMap": osm,
                 "Mode Sombre": darkMatter
             };
@@ -1300,6 +1346,10 @@
             });
 
             document.getElementById('import-file-input').addEventListener('change', importGeoJSON);
+
+            // PNG & PDF Export
+            document.getElementById('export-image-btn').addEventListener('click', exportMapAsImage);
+            document.getElementById('export-pdf-btn').addEventListener('click', exportMapAsPDF);
         }
 
         /* -------------------------------------------------------------
@@ -2067,8 +2117,12 @@
                         const url = layer._url;
                         if (url.includes('openstreetmap')) currentActiveLayerName = 'osm';
                         else if (url.includes('cartocdn')) currentActiveLayerName = 'dark';
+                        else if (url.includes('google.com') && url.includes('lyrs=s')) currentActiveLayerName = 'google-sat';
+                        else if (url.includes('google.com') && url.includes('lyrs=y')) currentActiveLayerName = 'google-hyb';
+                        else if (url.includes('google.com') && url.includes('lyrs=m')) currentActiveLayerName = 'google-std';
                         else if (url.includes('geopf.fr') && url.includes('ORTHOPHOTOS')) currentActiveLayerName = 'sat';
                         else if (url.includes('geopf.fr') && url.includes('PLANIGNV2')) currentActiveLayerName = 'plan';
+                        else if (url.includes('opentopomap')) currentActiveLayerName = 'topo';
                     }
                 });
 
@@ -2095,6 +2149,95 @@
             }
             
             lucide.createIcons();
+        }
+
+        /* -------------------------------------------------------------
+           12. Export Map as Image / PDF (Controls hidden)
+           ------------------------------------------------------------- */
+        function exportMapAsImage() {
+            showToast("Génération de l'image en cours...", "info");
+            
+            const mapElement = document.getElementById('map');
+            
+            // Hide Leaflet controls for clean render
+            const controls = document.querySelectorAll('.leaflet-control-container');
+            controls.forEach(c => c.style.display = 'none');
+
+            // Wait for display change to apply in browser rendering thread
+            setTimeout(() => {
+                html2canvas(mapElement, {
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                    scale: 2 // Boost resolution quality
+                }).then(canvas => {
+                    // Restore controls
+                    controls.forEach(c => c.style.display = '');
+
+                    try {
+                        const dataUrl = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        link.download = `carte-zones-activites-${new Date().toISOString().slice(0,10)}.png`;
+                        link.href = dataUrl;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        showToast("Image téléchargée avec succès", "success");
+                    } catch (err) {
+                        console.error("Export image error:", err);
+                        showToast("Erreur de téléchargement (limite CORS). Essayez un autre fond de carte.", "danger");
+                    }
+                }).catch(err => {
+                    console.error("html2canvas error:", err);
+                    controls.forEach(c => c.style.display = '');
+                    showToast("Erreur lors du rendu de la carte", "danger");
+                });
+            }, 150);
+        }
+
+        function exportMapAsPDF() {
+            showToast("Génération du PDF en cours...", "info");
+            
+            const mapElement = document.getElementById('map');
+            
+            // Hide Leaflet controls for clean render
+            const controls = document.querySelectorAll('.leaflet-control-container');
+            controls.forEach(c => c.style.display = 'none');
+
+            setTimeout(() => {
+                html2canvas(mapElement, {
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                    scale: 2 // Boost resolution quality
+                }).then(canvas => {
+                    // Restore controls
+                    controls.forEach(c => c.style.display = '');
+
+                    try {
+                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                        const { jsPDF } = window.jspdf;
+                        
+                        const width = canvas.width;
+                        const height = canvas.height;
+                        const orientation = width > height ? 'l' : 'p';
+                        
+                        // Create PDF with proportional dimensions matching the map aspect ratio
+                        const pdf = new jsPDF(orientation, 'px', [width / 2, height / 2]);
+                        pdf.addImage(imgData, 'JPEG', 0, 0, width / 2, height / 2);
+                        pdf.save(`carte-zones-activites-${new Date().toISOString().slice(0,10)}.pdf`);
+                        
+                        showToast("PDF téléchargé avec succès", "success");
+                    } catch (err) {
+                        console.error("Export PDF error:", err);
+                        showToast("Erreur lors de la génération du PDF (limite CORS).", "danger");
+                    }
+                }).catch(err => {
+                    console.error("html2canvas error:", err);
+                    controls.forEach(c => c.style.display = '');
+                    showToast("Erreur lors du rendu du PDF", "danger");
+                });
+            }, 150);
         }
     </script>
 </body>
