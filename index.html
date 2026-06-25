@@ -1119,8 +1119,7 @@
         let mapLayers = {}; // Map of zoneId -> Leaflet layer
         let currentEditingId = null; // ID of the zone currently being edited in modal
         let tempLayer = null; // Reference to newly drawn layer before saving
-        let tempLabelsOverlay = null; // Temporary overlay for screenshots
-        let originalTooltipPaneVisibility = ''; // Stored visibility state of tooltip pane
+        let modifiedElements = []; // Store elements temporarily modified during screenshot
         let selectedColor = '#6366f1'; // Default Indigo color
 
         // Category labels translation
@@ -2093,55 +2092,34 @@
            9. Helper Utilities
            ------------------------------------------------------------- */
         function prepareMapLabelsForScreenshot(mapElement) {
+            modifiedElements = [];
             try {
-                const mapRect = mapElement.getBoundingClientRect();
-                
-                // Create temporary overlay
-                tempLabelsOverlay = document.createElement('div');
-                tempLabelsOverlay.id = 'temp-labels-overlay';
-                tempLabelsOverlay.style.position = 'absolute';
-                tempLabelsOverlay.style.top = '0';
-                tempLabelsOverlay.style.left = '0';
-                tempLabelsOverlay.style.width = '100%';
-                tempLabelsOverlay.style.height = '100%';
-                tempLabelsOverlay.style.zIndex = '99999';
-                tempLabelsOverlay.style.pointerEvents = 'none';
-                
-                // Find all visible zone labels
-                const originalLabels = mapElement.querySelectorAll('.zone-label');
-                originalLabels.forEach(labelEl => {
-                    const labelRect = labelEl.getBoundingClientRect();
+                // Find all markers and tooltips on the map
+                const elements = mapElement.querySelectorAll('.leaflet-marker-icon, .leaflet-tooltip');
+                elements.forEach(el => {
+                    const transformText = el.style.transform || el.style.webkitTransform || '';
+                    const match = transformText.match(/translate(?:3d)?\((-?\d+(?:\.\d+)?)(?:px)?,\s*(-?\d+(?:\.\d+)?)(?:px)?/);
                     
-                    // Skip if the label is not visible or has zero size
-                    if (labelRect.width === 0 || labelRect.height === 0) return;
-                    
-                    const relativeLeft = labelRect.left - mapRect.left;
-                    const relativeTop = labelRect.top - mapRect.top;
-                    
-                    const clone = labelEl.cloneNode(true);
-                    
-                    // Strip Leaflet styles that use 3D transform and margins
-                    clone.style.transform = 'none';
-                    clone.style.webkitTransform = 'none';
-                    clone.style.margin = '0';
-                    clone.style.position = 'absolute';
-                    clone.style.left = `${relativeLeft}px`;
-                    clone.style.top = `${relativeTop}px`;
-                    clone.style.display = 'block';
-                    clone.style.visibility = 'visible';
-                    clone.style.opacity = '1';
-                    
-                    tempLabelsOverlay.appendChild(clone);
+                    if (match) {
+                        const x = parseFloat(match[1]);
+                        const y = parseFloat(match[2]);
+                        
+                        // Save original styles to restore later
+                        modifiedElements.push({
+                            element: el,
+                            originalTransform: el.style.transform,
+                            originalWebkitTransform: el.style.webkitTransform,
+                            originalLeft: el.style.left,
+                            originalTop: el.style.top
+                        });
+                        
+                        // Convert transform to left/top positioning relative to its pane
+                        el.style.transform = 'none';
+                        el.style.webkitTransform = 'none';
+                        el.style.left = `${x}px`;
+                        el.style.top = `${y}px`;
+                    }
                 });
-                
-                mapElement.appendChild(tempLabelsOverlay);
-                
-                // Hide the actual tooltip pane
-                const tooltipPane = mapElement.querySelector('.leaflet-tooltip-pane');
-                if (tooltipPane) {
-                    originalTooltipPaneVisibility = tooltipPane.style.visibility;
-                    tooltipPane.style.visibility = 'hidden';
-                }
             } catch (err) {
                 console.error("Error preparing labels for screenshot:", err);
             }
@@ -2149,15 +2127,14 @@
 
         function cleanupMapLabelsAfterScreenshot(mapElement) {
             try {
-                if (tempLabelsOverlay) {
-                    tempLabelsOverlay.remove();
-                    tempLabelsOverlay = null;
-                }
-                
-                const tooltipPane = mapElement.querySelector('.leaflet-tooltip-pane');
-                if (tooltipPane) {
-                    tooltipPane.style.visibility = originalTooltipPaneVisibility;
-                }
+                // Restore original styles
+                modifiedElements.forEach(item => {
+                    item.element.style.transform = item.originalTransform;
+                    item.element.style.webkitTransform = item.originalWebkitTransform;
+                    item.element.style.left = item.originalLeft;
+                    item.element.style.top = item.originalTop;
+                });
+                modifiedElements = [];
             } catch (err) {
                 console.error("Error cleaning up labels after screenshot:", err);
             }
