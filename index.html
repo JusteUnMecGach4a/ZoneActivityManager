@@ -1119,6 +1119,8 @@
         let mapLayers = {}; // Map of zoneId -> Leaflet layer
         let currentEditingId = null; // ID of the zone currently being edited in modal
         let tempLayer = null; // Reference to newly drawn layer before saving
+        let tempLabelsOverlay = null; // Temporary overlay for screenshots
+        let originalTooltipPaneVisibility = ''; // Stored visibility state of tooltip pane
         let selectedColor = '#6366f1'; // Default Indigo color
 
         // Category labels translation
@@ -2090,6 +2092,77 @@
         /* -------------------------------------------------------------
            9. Helper Utilities
            ------------------------------------------------------------- */
+        function prepareMapLabelsForScreenshot(mapElement) {
+            try {
+                const mapRect = mapElement.getBoundingClientRect();
+                
+                // Create temporary overlay
+                tempLabelsOverlay = document.createElement('div');
+                tempLabelsOverlay.id = 'temp-labels-overlay';
+                tempLabelsOverlay.style.position = 'absolute';
+                tempLabelsOverlay.style.top = '0';
+                tempLabelsOverlay.style.left = '0';
+                tempLabelsOverlay.style.width = '100%';
+                tempLabelsOverlay.style.height = '100%';
+                tempLabelsOverlay.style.zIndex = '99999';
+                tempLabelsOverlay.style.pointerEvents = 'none';
+                
+                // Find all visible zone labels
+                const originalLabels = mapElement.querySelectorAll('.zone-label');
+                originalLabels.forEach(labelEl => {
+                    const labelRect = labelEl.getBoundingClientRect();
+                    
+                    // Skip if the label is not visible or has zero size
+                    if (labelRect.width === 0 || labelRect.height === 0) return;
+                    
+                    const relativeLeft = labelRect.left - mapRect.left;
+                    const relativeTop = labelRect.top - mapRect.top;
+                    
+                    const clone = labelEl.cloneNode(true);
+                    
+                    // Strip Leaflet styles that use 3D transform and margins
+                    clone.style.transform = 'none';
+                    clone.style.webkitTransform = 'none';
+                    clone.style.margin = '0';
+                    clone.style.position = 'absolute';
+                    clone.style.left = `${relativeLeft}px`;
+                    clone.style.top = `${relativeTop}px`;
+                    clone.style.display = 'block';
+                    clone.style.visibility = 'visible';
+                    clone.style.opacity = '1';
+                    
+                    tempLabelsOverlay.appendChild(clone);
+                });
+                
+                mapElement.appendChild(tempLabelsOverlay);
+                
+                // Hide the actual tooltip pane
+                const tooltipPane = mapElement.querySelector('.leaflet-tooltip-pane');
+                if (tooltipPane) {
+                    originalTooltipPaneVisibility = tooltipPane.style.visibility;
+                    tooltipPane.style.visibility = 'hidden';
+                }
+            } catch (err) {
+                console.error("Error preparing labels for screenshot:", err);
+            }
+        }
+
+        function cleanupMapLabelsAfterScreenshot(mapElement) {
+            try {
+                if (tempLabelsOverlay) {
+                    tempLabelsOverlay.remove();
+                    tempLabelsOverlay = null;
+                }
+                
+                const tooltipPane = mapElement.querySelector('.leaflet-tooltip-pane');
+                if (tooltipPane) {
+                    tooltipPane.style.visibility = originalTooltipPaneVisibility;
+                }
+            } catch (err) {
+                console.error("Error cleaning up labels after screenshot:", err);
+            }
+        }
+
         function formatArea(areaSqMeters) {
             if (areaSqMeters >= 10000) {
                 return (areaSqMeters / 10000).toFixed(2) + ' ha';
@@ -2241,12 +2314,18 @@
 
             // Wait for display change to apply in browser rendering thread
             setTimeout(() => {
+                // Prepare labels for screenshot (cloning to avoid translation/transform rendering bugs)
+                prepareMapLabelsForScreenshot(mapElement);
+
                 html2canvas(mapElement, {
                     useCORS: true,
                     allowTaint: false,
                     logging: false,
                     scale: 2 // Boost resolution quality
                 }).then(canvas => {
+                    // Cleanup cloned labels overlay
+                    cleanupMapLabelsAfterScreenshot(mapElement);
+
                     // Restore controls
                     controls.forEach(c => c.style.display = '');
 
@@ -2265,6 +2344,7 @@
                     }
                 }).catch(err => {
                     console.error("html2canvas error:", err);
+                    cleanupMapLabelsAfterScreenshot(mapElement);
                     controls.forEach(c => c.style.display = '');
                     showToast("Erreur lors du rendu de la carte", "danger");
                 });
@@ -2346,12 +2426,18 @@
             legendControl.addTo(map);
 
             setTimeout(() => {
+                // Prepare labels for screenshot (cloning to avoid translation/transform rendering bugs)
+                prepareMapLabelsForScreenshot(mapElement);
+
                 html2canvas(mapElement, {
                     useCORS: true,
                     allowTaint: false,
                     logging: false,
                     scale: 2 // Boost resolution quality
                 }).then(canvas => {
+                    // Cleanup cloned labels overlay
+                    cleanupMapLabelsAfterScreenshot(mapElement);
+
                     // Restore controls & remove legend control
                     controlsToHide.forEach(c => c.style.display = '');
                     legendControl.remove();
@@ -2376,6 +2462,7 @@
                     }
                 }).catch(err => {
                     console.error("html2canvas error:", err);
+                    cleanupMapLabelsAfterScreenshot(mapElement);
                     controlsToHide.forEach(c => c.style.display = '');
                     legendControl.remove();
                     showToast("Erreur lors du rendu du PDF", "danger");
