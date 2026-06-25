@@ -1088,6 +1088,11 @@
     <!-- Notification Toast Container -->
     <div class="toast-container" id="toast-container"></div>
 
+    <!-- Disable 3D transforms globally in Leaflet to force 2D CSS left/top positioning for all tiles, panes, markers, and tooltips.
+         This is required to avoid HTML element rendering misalignment and shifting issues in html2canvas (PNG/PDF exports). -->
+    <script>
+        window.L_DISABLE_3D = true;
+    </script>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
@@ -1119,7 +1124,6 @@
         let mapLayers = {}; // Map of zoneId -> Leaflet layer
         let currentEditingId = null; // ID of the zone currently being edited in modal
         let tempLayer = null; // Reference to newly drawn layer before saving
-        let modifiedElements = []; // Store elements temporarily modified during screenshot
         let selectedColor = '#6366f1'; // Default Indigo color
 
         // Category labels translation
@@ -2091,54 +2095,7 @@
         /* -------------------------------------------------------------
            9. Helper Utilities
            ------------------------------------------------------------- */
-        function prepareMapLabelsForScreenshot(mapElement) {
-            modifiedElements = [];
-            try {
-                // Find all markers and tooltips on the map
-                const elements = mapElement.querySelectorAll('.leaflet-marker-icon, .leaflet-tooltip');
-                elements.forEach(el => {
-                    const transformText = el.style.transform || el.style.webkitTransform || '';
-                    const match = transformText.match(/translate(?:3d)?\((-?\d+(?:\.\d+)?)(?:px)?,\s*(-?\d+(?:\.\d+)?)(?:px)?/);
-                    
-                    if (match) {
-                        const x = parseFloat(match[1]);
-                        const y = parseFloat(match[2]);
-                        
-                        // Save original styles to restore later
-                        modifiedElements.push({
-                            element: el,
-                            originalTransform: el.style.transform,
-                            originalWebkitTransform: el.style.webkitTransform,
-                            originalLeft: el.style.left,
-                            originalTop: el.style.top
-                        });
-                        
-                        // Convert transform to left/top positioning relative to its pane
-                        el.style.transform = 'none';
-                        el.style.webkitTransform = 'none';
-                        el.style.left = `${x}px`;
-                        el.style.top = `${y}px`;
-                    }
-                });
-            } catch (err) {
-                console.error("Error preparing labels for screenshot:", err);
-            }
-        }
 
-        function cleanupMapLabelsAfterScreenshot(mapElement) {
-            try {
-                // Restore original styles
-                modifiedElements.forEach(item => {
-                    item.element.style.transform = item.originalTransform;
-                    item.element.style.webkitTransform = item.originalWebkitTransform;
-                    item.element.style.left = item.originalLeft;
-                    item.element.style.top = item.originalTop;
-                });
-                modifiedElements = [];
-            } catch (err) {
-                console.error("Error cleaning up labels after screenshot:", err);
-            }
-        }
 
         function formatArea(areaSqMeters) {
             if (areaSqMeters >= 10000) {
@@ -2291,18 +2248,12 @@
 
             // Wait for display change to apply in browser rendering thread
             setTimeout(() => {
-                // Prepare labels for screenshot (cloning to avoid translation/transform rendering bugs)
-                prepareMapLabelsForScreenshot(mapElement);
-
                 html2canvas(mapElement, {
                     useCORS: true,
                     allowTaint: false,
                     logging: false,
                     scale: 2 // Boost resolution quality
                 }).then(canvas => {
-                    // Cleanup cloned labels overlay
-                    cleanupMapLabelsAfterScreenshot(mapElement);
-
                     // Restore controls
                     controls.forEach(c => c.style.display = '');
 
@@ -2321,7 +2272,6 @@
                     }
                 }).catch(err => {
                     console.error("html2canvas error:", err);
-                    cleanupMapLabelsAfterScreenshot(mapElement);
                     controls.forEach(c => c.style.display = '');
                     showToast("Erreur lors du rendu de la carte", "danger");
                 });
@@ -2403,18 +2353,12 @@
             legendControl.addTo(map);
 
             setTimeout(() => {
-                // Prepare labels for screenshot (cloning to avoid translation/transform rendering bugs)
-                prepareMapLabelsForScreenshot(mapElement);
-
                 html2canvas(mapElement, {
                     useCORS: true,
                     allowTaint: false,
                     logging: false,
                     scale: 2 // Boost resolution quality
                 }).then(canvas => {
-                    // Cleanup cloned labels overlay
-                    cleanupMapLabelsAfterScreenshot(mapElement);
-
                     // Restore controls & remove legend control
                     controlsToHide.forEach(c => c.style.display = '');
                     legendControl.remove();
@@ -2439,7 +2383,6 @@
                     }
                 }).catch(err => {
                     console.error("html2canvas error:", err);
-                    cleanupMapLabelsAfterScreenshot(mapElement);
                     controlsToHide.forEach(c => c.style.display = '');
                     legendControl.remove();
                     showToast("Erreur lors du rendu du PDF", "danger");
